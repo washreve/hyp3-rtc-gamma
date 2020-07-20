@@ -137,7 +137,7 @@ def reproject_dir(dem_type, res, prod_dir=None):
         os.chdir(home)
 
 
-def report_kwargs(in_name, out_name, res, dem, roi, shape, match_flag, dead_flag, gamma_flag, lo_flag,
+def report_kwargs(in_name, out_name, res, dem, roi, shape, match_flag, fail_flag, gamma_flag,
                   pwr_flag, filter_flag, looks, terms, par, no_cross_pol, smooth, area, orbit_file):
     logging.info("Parameters for this run:")
     logging.info("    Input name                        : {}".format(in_name))
@@ -149,9 +149,8 @@ def report_kwargs(in_name, out_name, res, dem, roi, shape, match_flag, dead_flag
     if shape is not None:
         logging.info("    Shape File                        : {}".format(shape))
     logging.info("    Match flag                        : {}".format(match_flag))
-    logging.info("    If no match, use Dead Reckoning   : {}".format(dead_flag))
+    logging.info("    If no match, fail processing      : {}".format(fail_flag))
     logging.info("    Gamma0 output                     : {}".format(gamma_flag))
-    logging.info("    Low resolution flag               : {}".format(lo_flag))
     logging.info("    Create power images               : {}".format(pwr_flag))
     logging.info("    Speckle Filtering                 : {}".format(filter_flag))
     logging.info("    Number of looks to take           : {}".format(looks))
@@ -164,7 +163,7 @@ def report_kwargs(in_name, out_name, res, dem, roi, shape, match_flag, dead_flag
     logging.info("    Orbit File                        : {}".format(orbit_file))
 
 
-def process_pol(in_file, rtc_name, out_name, pol, res, look_fact, match_flag, dead_flag, gamma_flag,
+def process_pol(in_file, rtc_name, out_name, pol, res, look_fact, match_flag, fail_flag, gamma_flag,
                 filter_flag, pwr_flag, browse_res, dem, terms, par=None, area=False, orbit_file=None):
     logging.info("Processing the {} polarization".format(pol))
 
@@ -204,7 +203,7 @@ def process_pol(in_file, rtc_name, out_name, pol, res, look_fact, match_flag, de
             execute(f"mk_geo_radcal {mgrd} {mgrd}.par {dem} {dem}.par {geo_dir}/area.dem"
                     f" {geo_dir}/area.dem_par {geo_dir} image {res} 2 {options}", uselogging=True)
         except ExecuteError:
-            if not dead_flag:
+            if fail_flag:
                 logging.error("ERROR: Failed to match images")
                 sys.exit(1)
             else:
@@ -216,7 +215,7 @@ def process_pol(in_file, rtc_name, out_name, pol, res, look_fact, match_flag, de
             try:
                 check_coreg(out_name, res, max_offset=75, max_error=2.0)
             except CoregistrationError:
-                if not dead_flag:
+                if fail_flag:
                     logging.error("ERROR: Failed the coregistration check")
                     sys.exit(1)
                 else:
@@ -421,7 +420,7 @@ def create_browse_images(out_name, pol, cpol, browse_res):
     os.chdir("..")
 
 
-def create_consolidated_log(out_name, lo_flag, dead_flag, match_flag, gamma_flag, roi,
+def create_consolidated_log(out_name, fail_flag, match_flag, gamma_flag, roi,
                             shape, pwr_flag, filter_flag, pol, looks, log_file, smooth, terms,
                             no_cross_pol, par):
     out = "PRODUCT"
@@ -431,9 +430,7 @@ def create_consolidated_log(out_name, lo_flag, dead_flag, match_flag, gamma_flag
     f = open(logname, "w")
     f.write("Consolidated log for: {}\n".format(out_name))
     options = ""
-    if lo_flag:
-        options += "-l "
-    if not dead_flag:
+    if fail_flag:
         options += "--fail "
     if match_flag:
         options += "-n "
@@ -603,9 +600,8 @@ def rtc_sentinel_gamma(in_file,
                        roi=None,
                        shape=None,
                        match_flag=False,
-                       dead_flag=True,
+                       fail_flag=True,
                        gamma_flag=True,
-                       lo_flag=True,
                        pwr_flag=True,
                        filter_flag=False,
                        looks=None,
@@ -623,8 +619,6 @@ def rtc_sentinel_gamma(in_file,
 
     if res is None:
         res = 10
-    if lo_flag:
-        res = 30
 
     browse_res = 30
     if res > browse_res:
@@ -656,7 +650,7 @@ def rtc_sentinel_gamma(in_file,
     if out_name is None:
         out_name = get_product_name(in_file, orbit_file, res, gamma_flag, pwr_flag, filter_flag, match_flag)
 
-    report_kwargs(in_file, out_name, res, dem, roi, shape, match_flag, dead_flag, gamma_flag, lo_flag,
+    report_kwargs(in_file, out_name, res, dem, roi, shape, match_flag, fail_flag, gamma_flag,
                   pwr_flag, filter_flag, looks, terms, par, no_cross_pol, smooth, area, orbit_file)
 
     orbit_file = os.path.abspath(orbit_file)  # ingest_S1_granule requires absolute path
@@ -708,7 +702,7 @@ def rtc_sentinel_gamma(in_file,
         pol = "VV"
         rtc_name = out_name + "_" + pol + ".tif"
         process_pol(in_file, rtc_name, out_name, pol, res, looks,
-                    match_flag, dead_flag, gamma_flag, filter_flag, pwr_flag,
+                    match_flag, fail_flag, gamma_flag, filter_flag, pwr_flag,
                     browse_res, dem, terms, par=par, area=area, orbit_file=orbit_file)
 
         if vhlist and not no_cross_pol:
@@ -724,7 +718,7 @@ def rtc_sentinel_gamma(in_file,
         pol = "HH"
         rtc_name = out_name + "_" + pol + ".tif"
         process_pol(in_file, rtc_name, out_name, pol, res, looks,
-                    match_flag, dead_flag, gamma_flag, filter_flag, pwr_flag,
+                    match_flag, fail_flag, gamma_flag, filter_flag, pwr_flag,
                     browse_res, dem, terms, par=par, area=area, orbit_file=orbit_file)
 
         if hvlist and not no_cross_pol:
@@ -757,7 +751,7 @@ def rtc_sentinel_gamma(in_file,
     logging.info("               Sentinel RTC Program - Completed")
     logging.info("===================================================================")
 
-    create_consolidated_log(out_name, lo_flag, dead_flag, match_flag, gamma_flag, roi,
+    create_consolidated_log(out_name, fail_flag, match_flag, gamma_flag, roi,
                             shape, pwr_flag, filter_flag, pol, looks, log_file, smooth, terms,
                             no_cross_pol, par)
     return 'PRODUCT', out_name
@@ -769,30 +763,32 @@ def main():
         prog='rtc_sentinel.py',
         description=__doc__,
     )
-    parser.add_argument('input', help='Name of input file, either .zip or .SAFE')
-    parser.add_argument("-o", "--outputResolution", type=float, help="Desired output resolution")
+    parser.add_argument('in_file', help='Name of input file, either .zip or .SAFE')
+    parser.add_argument('--out-name', help='base name of the output files')
+    parser.add_argument("-o", "--resolution", type=float, help="Desired output resolution")  # FIXME
 
     group = parser.add_mutually_exclusive_group()
-    group.add_argument("-e", "--externalDEM", help="Specify a DEM file to use - must be in UTM projection")
+    group.add_argument("-e", "--dem", help="Specify a DEM file to use - must be in UTM projection")
     group.add_argument("-r", "--roi", type=float, nargs=4, metavar=('LON_MIN', 'LAT_MIN', 'LON_MAX', 'LAT_MAX'),
-                       help="Specify ROI to use")
-    group.add_argument("-s", "--shape", help="Specify shape file to use")
+                       help="Specify ROI to use")  # FIXME: How is this used?
+    group.add_argument("-s", "--shape", help="Specify shape file to use")  # FIXME: How is this used?
 
-    parser.add_argument("-n", action="store_false", help="Do not perform matching")
+    # FIXME: combine these two: matching: 'true', 'false', 'strict'
+    parser.add_argument("-n","--no-match",  action="store_false", help="Do not perform matching")
     parser.add_argument("--fail", action="store_true",
                         help="if matching fails, fail the program. Default: use dead reckoning")
-    parser.add_argument("--sigma", action="store_true", help="create sigma0 instead of gamma0")
-    parser.add_argument("--amp", action="store_true", help="create amplitude images instead of power")
-    parser.add_argument("--smooth", action="store_true", help="smooth DEM file before terrain correction")
-    parser.add_argument("-l", action="store_true", help="create a lo-res output (30m)")
-    parser.add_argument("-f", action="store_true", help="run enhanced lee filter")
-    parser.add_argument("-k", "--looks", type=int,
-                        help="set the number of looks to take (def:3 for SLC/6 for GRD)")
     parser.add_argument("-t", "--terms", type=int, default=1,
                         help="set the number of terms in matching polynomial (default is 1)")
-    parser.add_argument('--output', help='base name of the output files')
     parser.add_argument("--par", help="Stack processing - use specified offset file and don't match")
-    parser.add_argument("--nocrosspol", action="store_true", help="Do not process the cross pol image")
+
+    parser.add_argument("--gamma", action="store_true", help="create gamma0 instead of sigma0")
+    parser.add_argument("--power", action="store_true", help="create power images instead of amplitude")
+    parser.add_argument("-f", "--filter", action="store_true", help="run enhanced lee filter")
+    parser.add_argument("-k", "--looks", type=int,
+                        help="set the number of looks to take (def:3 for SLC/6 for GRD)")
+
+    parser.add_argument("--no-cross-pol", action="store_true", help="Do not process the cross pol image")
+    parser.add_argument("--smooth", action="store_true", help="smooth DEM file before terrain correction")
     parser.add_argument("-a", "--area", action="store_true", help="Keep area map")
     args = parser.parse_args()
 
@@ -800,22 +796,21 @@ def main():
                         datefmt='%m/%d/%Y %I:%M:%S %p', level=logging.INFO)
 
     # FIXME: This function's inputs should be 1:1 (name and value!) with CLI args!
-    rtc_sentinel_gamma(args.input,
-                       out_name=args.output,
-                       res=args.outputResolution,
-                       dem=args.externalDEM,
+    rtc_sentinel_gamma(args.in_file,
+                       out_name=args.out_name,
+                       res=args.resolution,
+                       dem=args.dem,
                        roi=args.roi,
                        shape=args.shape,
-                       match_flag=args.n,
-                       dead_flag=not args.fail,
-                       gamma_flag=not args.sigma,
-                       lo_flag=args.l,
-                       pwr_flag=not args.amp,
-                       filter_flag=args.f,
+                       match_flag=args.no_match,  # FIXME: matching
+                       fail_flag=args.fail,  # FIXME: matching
+                       gamma_flag=args.gamma,  # FIXME Arg name
+                       pwr_flag=args.power,
+                       filter_flag=args.filter,
                        looks=args.looks,
-                       terms=args.terms,
-                       par=args.par,
-                       no_cross_pol=args.nocrosspol,
+                       terms=args.terms,  # FIXME: matching
+                       par=args.par,  # FIXME: matching
+                       no_cross_pol=args.no_cross_pol,
                        smooth=args.smooth,
                        area=args.area)
 
