@@ -765,16 +765,23 @@ def main():
     )
     parser.add_argument('in_file', help='Name of input file, either .zip or .SAFE')
     parser.add_argument('--out-name', help='base name of the output files')
-    parser.add_argument("-o", "--resolution", type=float, help="Desired output resolution")  # FIXME
+    parser.add_argument("-o", "--resolution", type=float, help="Desired output resolution")  # FIXME: short arg
 
     group = parser.add_mutually_exclusive_group()
     group.add_argument("-e", "--dem", help="Specify a DEM file to use - must be in UTM projection")
-    group.add_argument("-r", "--roi", type=float, nargs=4, metavar=('LON_MIN', 'LAT_MIN', 'LON_MAX', 'LAT_MAX'),
-                       help="Specify ROI to use")  # FIXME: How is this used?
-    group.add_argument("-s", "--shape", help="Specify shape file to use")  # FIXME: How is this used?
 
-    # FIXME: combine these two: matching: 'true', 'false', 'strict'
-    parser.add_argument("-n","--no-match",  action="store_false", help="Do not perform matching")
+    # FIXME: Combine?
+    # ---------------
+    # FIXME: How is this used?
+    #        * Over ridden by --shape if given
+    group.add_argument("-r", "--roi", type=float, nargs=4, metavar=('LON_MIN', 'LAT_MIN', 'LON_MAX', 'LAT_MAX'),
+                       help="Specify ROI to use")
+    # FIXME: How is this used?
+    #        * Sets --roi from the "envelope" ( GDAL geometry getEnvelope)
+    group.add_argument("-s", "--shape", help="Specify shape file to use")
+
+    # FIXME: combine these four? >0 matching and fail, 0 (None?) no matching
+    parser.add_argument("-n", "--no-match",  action="store_false", help="Do not perform matching")
     parser.add_argument("--fail", action="store_true",
                         help="if matching fails, fail the program. Default: use dead reckoning")
     parser.add_argument("-t", "--terms", type=int, default=1,
@@ -800,16 +807,19 @@ def main():
                        out_name=args.out_name,
                        res=args.resolution,
                        dem=args.dem,
+
                        roi=args.roi,
                        shape=args.shape,
+
                        match_flag=args.no_match,  # FIXME: matching
                        fail_flag=args.fail,  # FIXME: matching
+                       terms=args.terms,  # FIXME: matching
+                       par=args.par,  # FIXME: matching
+
                        gamma_flag=args.gamma,  # FIXME Arg name
                        pwr_flag=args.power,
                        filter_flag=args.filter,
                        looks=args.looks,
-                       terms=args.terms,  # FIXME: matching
-                       par=args.par,  # FIXME: matching
                        no_cross_pol=args.no_cross_pol,
                        smooth=args.smooth,
                        area=args.area)
