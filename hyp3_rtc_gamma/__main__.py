@@ -115,9 +115,6 @@ def main_v2():
 
     os.rename(output_folder, product_name)
 
-    # FIXME: always remove pixel area for standard product, this may become a customization option
-    find_and_remove(product_name, '*_flat_*.tif*')
-
     output_zip = make_archive(base_name=product_name, format='zip', base_dir=product_name)
     if args.bucket:
         upload_file_to_s3(output_zip, args.bucket, args.bucket_prefix)
@@ -184,8 +181,6 @@ def process_rtc_gamma(cfg, n):
             find_and_remove(product_dir, '*_dem.tif*')
         if extra_arg_is(cfg, 'include_inc', 'no'):
             find_and_remove(product_dir, '*_inc_map.tif*')
-        # FIXME: always remove pixel area tif, until we want to expose the option again
-        find_and_remove(product_dir, '*_flat_*.tif*')
 
         zip_file = make_archive(base_name=product_dir, format='zip', base_dir=product_dir)
         cfg['final_product_size'] = [os.stat(zip_file).st_size, ]

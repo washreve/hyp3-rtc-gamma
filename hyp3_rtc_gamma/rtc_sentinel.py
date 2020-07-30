@@ -280,7 +280,6 @@ def process_pol(in_file, rtc_name, out_name, pol, res, look_fact, match_flag, fa
     shutil.move("{}.ls_map.tif".format(out_name), "{}/{}_ls_map.tif".format(out_dir, out_name))
     shutil.move("{}.inc_map.tif".format(out_name), "{}/{}_inc_map.tif".format(out_dir, out_name))
     shutil.move("{}.dem.tif".format(out_name), "{}/{}_dem.tif".format(out_dir, out_name))
-    shutil.move("{}.flat.tif".format(out_name), "{}/{}_flat_{}.tif".format(out_dir, out_name, pol))
 
     os.chdir("..")
 
@@ -368,8 +367,6 @@ def process_2nd_pol(in_file, rtc_name, cpol, res, look_fact, gamma_flag, filter_
     else:
         copy_metadata(tif, "image_cal_map.mli_amp.tif")
         shutil.move("image_cal_map.mli_amp.tif", "{}/{}".format(out_dir, rtc_name))
-
-    shutil.move("{}.flat.tif".format(outfile), "{}/{}_flat_{}.tif".format(out_dir, rtc_name, cpol))
 
     os.chdir(home_dir)
 
