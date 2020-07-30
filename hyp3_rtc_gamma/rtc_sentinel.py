@@ -138,7 +138,7 @@ def reproject_dir(dem_type, res, prod_dir=None):
 
 
 def report_kwargs(in_name, out_name, res, dem, roi, shape, match_flag, fail_flag, gamma_flag,
-                  pwr_flag, filter_flag, looks, terms, par, no_cross_pol, smooth, area, orbit_file):
+                  pwr_flag, filter_flag, looks, terms, par, no_cross_pol, smooth, orbit_file):
     logging.info("Parameters for this run:")
     logging.info("    Input name                        : {}".format(in_name))
     logging.info("    Output name                       : {}".format(out_name))
@@ -159,12 +159,11 @@ def report_kwargs(in_name, out_name, res, dem, roi, shape, match_flag, fail_flag
         logging.info("    Offset file                       : {}".format(par))
     logging.info("    Process crosspol                  : {}".format(not no_cross_pol))
     logging.info("    Smooth DEM tiles                  : {}".format(smooth))
-    logging.info("    Save Pixel Area                   : {}".format(area))
     logging.info("    Orbit File                        : {}".format(orbit_file))
 
 
 def process_pol(in_file, rtc_name, out_name, pol, res, look_fact, match_flag, fail_flag, gamma_flag,
-                filter_flag, pwr_flag, browse_res, dem, terms, par=None, area=False, orbit_file=None):
+                filter_flag, pwr_flag, browse_res, dem, terms, par=None, orbit_file=None):
     logging.info("Processing the {} polarization".format(pol))
 
     mgrd = "{out}.{pol}.mgrd".format(out=out_name, pol=pol)
@@ -281,14 +280,13 @@ def process_pol(in_file, rtc_name, out_name, pol, res, look_fact, match_flag, fa
     shutil.move("{}.ls_map.tif".format(out_name), "{}/{}_ls_map.tif".format(out_dir, out_name))
     shutil.move("{}.inc_map.tif".format(out_name), "{}/{}_inc_map.tif".format(out_dir, out_name))
     shutil.move("{}.dem.tif".format(out_name), "{}/{}_dem.tif".format(out_dir, out_name))
-    if area:
-        shutil.move("{}.flat.tif".format(out_name), "{}/{}_flat_{}.tif".format(out_dir, out_name, pol))
+    shutil.move("{}.flat.tif".format(out_name), "{}/{}_flat_{}.tif".format(out_dir, out_name, pol))
 
     os.chdir("..")
 
 
 def process_2nd_pol(in_file, rtc_name, cpol, res, look_fact, gamma_flag, filter_flag, pwr_flag, browse_res,
-                    outfile, dem, terms, par=None, area=False, orbit_file=None):
+                    outfile, dem, terms, par=None, orbit_file=None):
     if cpol == "VH":
         mpol = "VV"
     else:
@@ -370,8 +368,8 @@ def process_2nd_pol(in_file, rtc_name, cpol, res, look_fact, gamma_flag, filter_
     else:
         copy_metadata(tif, "image_cal_map.mli_amp.tif")
         shutil.move("image_cal_map.mli_amp.tif", "{}/{}".format(out_dir, rtc_name))
-    if area:
-        shutil.move("{}.flat.tif".format(outfile), "{}/{}_flat_{}.tif".format(out_dir, rtc_name, cpol))
+
+    shutil.move("{}.flat.tif".format(outfile), "{}/{}_flat_{}.tif".format(out_dir, rtc_name, cpol))
 
     os.chdir(home_dir)
 
@@ -608,8 +606,7 @@ def rtc_sentinel_gamma(in_file,
                        terms=1,
                        par=None,
                        no_cross_pol=False,
-                       smooth=False,
-                       area=False):
+                       smooth=False):
 
     log_file = configure_log_file()
 
@@ -651,7 +648,7 @@ def rtc_sentinel_gamma(in_file,
         out_name = get_product_name(in_file, orbit_file, res, gamma_flag, pwr_flag, filter_flag, match_flag)
 
     report_kwargs(in_file, out_name, res, dem, roi, shape, match_flag, fail_flag, gamma_flag,
-                  pwr_flag, filter_flag, looks, terms, par, no_cross_pol, smooth, area, orbit_file)
+                  pwr_flag, filter_flag, looks, terms, par, no_cross_pol, smooth, orbit_file)
 
     orbit_file = os.path.abspath(orbit_file)  # ingest_S1_granule requires absolute path
 
@@ -703,7 +700,7 @@ def rtc_sentinel_gamma(in_file,
         rtc_name = out_name + "_" + pol + ".tif"
         process_pol(in_file, rtc_name, out_name, pol, res, looks,
                     match_flag, fail_flag, gamma_flag, filter_flag, pwr_flag,
-                    browse_res, dem, terms, par=par, area=area, orbit_file=orbit_file)
+                    browse_res, dem, terms, par=par, orbit_file=orbit_file)
 
         if vhlist and not no_cross_pol:
             cpol = "VH"
@@ -711,7 +708,7 @@ def rtc_sentinel_gamma(in_file,
             logging.info("Found VH polarization - processing")
             process_2nd_pol(in_file, rtc_name, cpol, res, looks,
                             gamma_flag, filter_flag, pwr_flag, browse_res,
-                            out_name, dem, terms, par=par, area=area, orbit_file=orbit_file)
+                            out_name, dem, terms, par=par, orbit_file=orbit_file)
 
     if hhlist:
         logging.info("Found HH polarization - processing")
@@ -719,7 +716,7 @@ def rtc_sentinel_gamma(in_file,
         rtc_name = out_name + "_" + pol + ".tif"
         process_pol(in_file, rtc_name, out_name, pol, res, looks,
                     match_flag, fail_flag, gamma_flag, filter_flag, pwr_flag,
-                    browse_res, dem, terms, par=par, area=area, orbit_file=orbit_file)
+                    browse_res, dem, terms, par=par, orbit_file=orbit_file)
 
         if hvlist and not no_cross_pol:
             cpol = "HV"
@@ -727,7 +724,7 @@ def rtc_sentinel_gamma(in_file,
             rtc_name = out_name + "_" + cpol + ".tif"
             process_2nd_pol(in_file, rtc_name, cpol, res, looks,
                             gamma_flag, filter_flag, pwr_flag, browse_res,
-                            out_name, dem, terms, par=par, area=area, orbit_file=orbit_file)
+                            out_name, dem, terms, par=par, orbit_file=orbit_file)
 
     if hhlist is None and vvlist is None:
         logging.error(f"ERROR: Can not find VV or HH polarization in {in_file}")
@@ -767,11 +764,11 @@ def main():
     parser.add_argument('--out-name', help='base name of the output files')
     parser.add_argument("-o", "--resolution", type=float, help="Desired output resolution")  # FIXME: short arg
 
-    group = parser.add_mutually_exclusive_group()
-    group.add_argument("-e", "--dem", help="Specify a DEM file to use - must be in UTM projection")
-
     # FIXME: Combine?
     # ---------------
+    # FIXME: DEM skips the ROI or shape so assumes a DEM has been assembled from tiles that already covers the ROI
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument("-e", "--dem", help="Specify a DEM file to use - must be in UTM projection")
     # FIXME: How is this used?
     #        * Over ridden by --shape if given
     group.add_argument("-r", "--roi", type=float, nargs=4, metavar=('LON_MIN', 'LAT_MIN', 'LON_MAX', 'LAT_MAX'),
@@ -796,7 +793,6 @@ def main():
 
     parser.add_argument("--no-cross-pol", action="store_true", help="Do not process the cross pol image")
     parser.add_argument("--smooth", action="store_true", help="smooth DEM file before terrain correction")
-    parser.add_argument("-a", "--area", action="store_true", help="Keep area map")
     args = parser.parse_args()
 
     logging.basicConfig(format='%(asctime)s - %(levelname)s - %(message)s',
@@ -806,8 +802,8 @@ def main():
     rtc_sentinel_gamma(args.in_file,
                        out_name=args.out_name,
                        res=args.resolution,
-                       dem=args.dem,
 
+                       dem=args.dem,
                        roi=args.roi,
                        shape=args.shape,
 
@@ -822,7 +818,7 @@ def main():
                        looks=args.looks,
                        no_cross_pol=args.no_cross_pol,
                        smooth=args.smooth,
-                       area=args.area)
+    )
 
 
 if __name__ == "__main__":
